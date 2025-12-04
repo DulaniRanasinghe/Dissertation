@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Summary Report</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .slide-in {
+            animation: slideIn 0.6s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 font-sans">
+    <div class="min-h-screen p-4 sm:p-8">
+        <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-6 sm:p-10 border-t-8 border-purple-600 fade-in">
+            <div class="mb-8 text-center">
+                <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Study Summary Report</h1>
+                <p class="text-gray-600">Metrics for all three application form variants</p>
+                <p class="text-sm text-gray-500 mt-2">Participant ID: <span id="participantId" class="font-semibold text-purple-700"></span></p>
+            </div>
+            
+            <!-- Individual Variant Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10" id="variantCards">
+                <!-- Cards will be dynamically inserted here -->
+            </div>
+
+            <!-- Overall Metrics Section -->
+            <div id="overallMetrics" class="hidden">
+                <div class="p-6 bg-purple-100 rounded-xl shadow-inner text-center slide-in">
+                    <h3 class="text-2xl font-bold text-purple-800 mb-4">Overall Study Metrics</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <p class="text-sm text-gray-600 mb-1">Total Completion Time</p>
+                            <p class="text-3xl font-extrabold text-purple-600"><span id="totalTime">0</span>s</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <p class="text-sm text-gray-600 mb-1">Total Validation Errors</p>
+                            <p class="text-3xl font-extrabold text-purple-600" id="totalErrors">0</p>
+                        </div>
+                        <!-- NASA-TLX score will be added here dynamically if available -->
+                    </div>
+                    <button 
+                        onclick="downloadAllLogs()" 
+                        class="bg-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-purple-700 transition flex items-center justify-center gap-2 mx-auto shadow-lg transform hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download Complete Study Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Incomplete Warning -->
+            <div id="incompleteWarning" class="hidden">
+                <div class="p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded-lg text-center">
+                    <svg class="w-6 h-6 inline-block mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <p class="font-medium inline">Please complete all three form variants (A, B, and C) to unlock the final overall metrics.</p>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <div class="mt-8 text-center">
+                <button 
+                    onclick="window.location.href='index.html'" 
+                    class="bg-gray-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 transition shadow-md"
+                >
+                    Back to Form Selection
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Storage utilities
+        const STORAGE_KEY = 'formStudyData';
+        
+        const getStoredData = () => {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : {};
+        };
+
+        const getLogKey = (variant) => `logs_${variant}`;
+
+        // Load data
+        const storedData = getStoredData();
+        const participantId = storedData.participantId || 'Unknown';
+        const status = storedData.status || {};
+
+        document.getElementById('participantId').textContent = participantId;
+
+        // Variant configurations
+        const variants = [
+            { id: 'A', name: 'Variant A', fullName: 'Single-Page Form' },
+            { id: 'B', name: 'Variant B', fullName: 'Accordion Form' },
+            { id: 'C', name: 'Variant C', fullName: 'Progressive Disclosure' }
+        ];
+
+        // Check icon SVG
+        const checkIcon = `<svg class="w-5 h-5 text-green-600 mr-2 border-2 border-green-600 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+            <polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        </svg>`;
+
+        // Info icon SVG
+        const infoIcon = `<svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>`;
+
+        // Load NASA-TLX data for all variants
+        const getTLXScore = (variant) => {
+            const tlxData = JSON.parse(localStorage.getItem(`nasa_tlx_${variant}`) || '{}');
+            return tlxData[participantId] ? tlxData[participantId].overallScore : null;
+        };
+
+        // Render variant cards
+        const variantCards = document.getElementById('variantCards');
+        let allComplete = true;
+        let totalErrors = 0;
+        let totalTime = 0;
+        let totalTLXScore = 0;
+        let tlxCount = 0;
+
+        variants.forEach(variant => {
+            const variantStatus = status[variant.id] || {};
+            const isComplete = variantStatus.status === 'complete';
+            const errors = variantStatus.errors !== undefined ? variantStatus.errors : 'N/A';
+            const time = variantStatus.time !== undefined ? variantStatus.time : 'N/A';
+            const tlxScore = getTLXScore(variant.id);
+
+            if (!isComplete) {
+                allComplete = false;
+            } else {
+                totalErrors += (errors !== 'N/A' ? parseInt(errors) : 0);
+                totalTime += (time !== 'N/A' ? parseFloat(time) : 0);
+            }
+
+            if (tlxScore !== null) {
+                totalTLXScore += parseFloat(tlxScore);
+                tlxCount++;
+            }
+
+            const card = document.createElement('div');
+            card.className = `p-5 rounded-xl shadow-lg transition duration-300 ${
+                isComplete 
+                    ? 'bg-green-50 border-2 border-green-400' 
+                    : 'bg-red-50 border-2 border-red-400'
+            }`;
+            
+            card.innerHTML = `
+                <h2 class="text-xl font-bold mb-3 flex items-center">
+                    ${isComplete ? checkIcon : infoIcon}
+                    ${variant.name}
+                </h2>
+                <p class="text-sm text-gray-600 mb-3">${variant.fullName}</p>
+                <div class="space-y-2 text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-gray-700">Status:</span>
+                        <span class="font-semibold ${isComplete ? 'text-green-600' : 'text-red-600'}">
+                            ${isComplete ? 'Complete' : 'Pending'}
+                        </span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-700">Total Errors:</span>
+                        <span class="font-semibold text-gray-900">${errors}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-700">Completion Time:</span>
+                        <span class="font-semibold text-gray-900">${time}${time !== 'N/A' ? 's' : ''}</span>
+                    </div>
+                    <div class="flex justify-between border-t pt-2 mt-2">
+                        <span class="text-gray-700">NASA-TLX Score:</span>
+                        <span class="font-semibold ${tlxScore ? 'text-indigo-600' : 'text-gray-400'}">${tlxScore ? tlxScore : 'Not Completed'}</span>
+                    </div>
+                </div>
+            `;
+            
+            variantCards.appendChild(card);
+        });
+
+        // Show overall metrics or warning
+        if (allComplete) {
+            const avgTLXScore = tlxCount > 0 ? (totalTLXScore / tlxCount).toFixed(2) : 'N/A';
+            
+            document.getElementById('totalTime').textContent = totalTime.toFixed(2);
+            document.getElementById('totalErrors').textContent = totalErrors;
+            document.getElementById('overallMetrics').classList.remove('hidden');
+            
+            // Add average NASA-TLX score to the overall metrics
+            const metricsGrid = document.querySelector('#overallMetrics .grid');
+            
+            // Add NASA-TLX metric if at least one score exists
+            if (tlxCount > 0) {
+                const tlxMetric = document.createElement('div');
+                tlxMetric.className = 'bg-white p-4 rounded-lg shadow';
+                tlxMetric.innerHTML = `
+                    <p class="text-sm text-gray-600 mb-1">Average NASA-TLX Score</p>
+                    <p class="text-3xl font-extrabold text-purple-600">${avgTLXScore}</p>
+                    <p class="text-xs text-gray-500 mt-1">${tlxCount} of 3 completed</p>
+                `;
+                metricsGrid.appendChild(tlxMetric);
+            }
+        } else {
+            document.getElementById('incompleteWarning').classList.remove('hidden');
+        }
+
+        // Download all logs function
+        function downloadAllLogs() {
+            const logsA = JSON.parse(localStorage.getItem(getLogKey('A')) || '{}')[participantId] || [];
+            const logsB = JSON.parse(localStorage.getItem(getLogKey('B')) || '{}')[participantId] || [];
+            const logsC = JSON.parse(localStorage.getItem(getLogKey('C')) || '{}')[participantId] || [];
+            
+            const allLogs = [...logsA, ...logsB, ...logsC].sort((a, b) => a.timestamp - b.timestamp);
+            
+            if (allLogs.length === 0) {
+                alert('No interaction logs found for this participant ID.');
+                return;
+            }
+            
+            // CSV headers
+            const headers = Object.keys(allLogs[0]).join(',');
+            
+            // CSV rows
+            const rows = allLogs.map(row => 
+                Object.values(row).map(val => {
+                    let stringVal = String(val);
+                    if (stringVal.includes(',') || stringVal.includes('"') || stringVal.includes('\n')) {
+                        return `"${stringVal.replace(/"/g, '""')}"`;
+                    }
+                    return stringVal;
+                }).join(',')
+            );
+            
+            const csv = [headers, ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${participantId}_Complete_Study_Logs.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

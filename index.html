@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Variant Form Study Index</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-white to-blue-50 font-sans">
+    <div class="min-h-screen p-4 sm:p-8">
+        <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-2xl p-6 sm:p-10 border-t-8 border-indigo-600 fade-in">
+            <div class="mb-8 text-center">
+                <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Form Usability Study Index</h1>
+                <p class="text-sm text-gray-500 mt-3"> ID for this session: <span id="participantId" class="font-extrabold text-indigo-700"></span></p>
+            </div>
+            
+            <div id="formsContainer" class="space-y-4 mb-8">
+               
+            </div>
+
+            <div class="pt-6 border-t">
+                <button
+                    id="summaryBtn"
+                    class="w-full bg-purple-600 text-white px-5 py-3 rounded-lg font-semibold hover:bg-purple-700 transition shadow-lg flex items-center justify-center gap-2"
+                >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 17H7A5 5 0 0 1 7 7h2"></path>
+                        <path d="M15 7h2a5 5 0 1 1 0 10h-2"></path>
+                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    View Final Summary Report
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Storage utilities
+        const STORAGE_KEY = 'formStudyData';
+        
+        const getStoredData = () => {
+            const data = localStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : {};
+        };
+
+        const setStoredData = (value) => {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+        };
+
+        // Initialize participant ID
+        let storedData = getStoredData();
+        let participantId = storedData.participantId;
+        
+        if (!participantId) {
+            participantId = `P${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+            storedData = { ...storedData, participantId, status: {} };
+            setStoredData(storedData);
+        }
+        
+        document.getElementById('participantId').textContent = participantId;
+
+        // Form configurations
+        const forms = [
+            { 
+                id: 'A', 
+                name: 'Variant A: Single-Page Form', 
+                file: 'VariantA.html',
+                description: 'All fields visible in one scrollable page'
+            },
+            { 
+                id: 'B', 
+                name: 'Variant B: Chunked Form', 
+                file: 'VariantB.html',
+                description: 'Collapsible sections with expand/collapse'
+            },
+            { 
+                id: 'C', 
+                name: 'Variant C: Progressive Disclosure', 
+                file: 'VariantC.html',
+                description: 'Step-by-step with locked future steps'
+            },
+        ];
+
+        // Check icon SVG
+        const checkIcon = `<svg class="w-4 h-4 text-green-600 mr-1 bg-green-200 rounded-full p-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <polyline points="20 6 9 17 4 12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        </svg>`;
+
+        // Info icon SVG
+        const infoIcon = `<svg class="w-4 h-4 text-gray-400 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke-width="2"></circle>
+            <line x1="12" y1="16" x2="12" y2="12" stroke-width="2"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8" stroke-width="2"></line>
+        </svg>`;
+
+        // Render forms
+        const formsContainer = document.getElementById('formsContainer');
+        const status = storedData.status || {};
+
+        forms.forEach(form => {
+            const formStatus = status[form.id] || {};
+            const isComplete = formStatus.status === 'complete';
+            
+            const formCard = document.createElement('div');
+            formCard.className = 'p-4 bg-gray-50 rounded-lg shadow-md flex items-center justify-between transition hover:bg-gray-100';
+            
+            formCard.innerHTML = `
+                <div class="flex-1">
+                    <p class="text-lg font-semibold text-gray-800">${form.name}</p>
+                    <p class="text-sm text-gray-500 mt-0.5">${form.description}</p>
+                    <div class="text-sm mt-2 flex items-center gap-4">
+                        <span class="flex items-center ${isComplete ? 'text-green-600 font-medium' : 'text-gray-500 font-medium'}">
+                            ${isComplete ? checkIcon : infoIcon}
+                            ${isComplete ? 'Completed' : 'Pending'}
+                        </span>
+                        ${formStatus.errors !== undefined ? `<span class="text-gray-500">Errors: ${formStatus.errors}</span>` : ''}
+                        ${formStatus.time !== undefined ? `<span class="text-gray-500">Time: ${formStatus.time}s</span>` : ''}
+                    </div>
+                </div>
+                <button
+                    onclick="navigateToForm('${form.file}')"
+                    class="bg-indigo-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition shadow-md whitespace-nowrap ml-4"
+                >
+                    ${isComplete ? 'Review Form' : 'Start Form'}
+                </button>
+            `;
+            
+            formsContainer.appendChild(formCard);
+        });
+
+        // Navigation functions
+        function navigateToForm(file) {
+            window.location.href = file;
+        }
+
+        document.getElementById('summaryBtn').addEventListener('click', () => {
+            window.location.href = 'summary.html';
+        });
+    </script>
+</body>
+</html>
