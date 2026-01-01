@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Export Study Data</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        
+        <!-- Main Export Section -->
+        <div id="mainSection" class="bg-white rounded-xl shadow-2xl p-8 mb-6">
+            <h1 class="text-3xl font-bold text-gray-900 mb-6">📊 Export Study Data</h1>
+            
+            <div class="mb-8 p-6 bg-blue-50 border-l-4 border-blue-500 rounded">
+                <h2 class="font-bold text-lg mb-2">Instructions:</h2>
+                <p class="text-gray-700">Click the button below to download all collected data as a ZIP file containing:</p>
+                <ul class="list-disc ml-6 mt-2 text-gray-700">
+                    <li>variant_a_data.csv - Field-level analytics for Variant A (31 columns)</li>
+                    <li>variant_b_data.csv - Field-level analytics for Variant B (31 columns)</li>
+                    <li>variant_c_data.csv - Field-level analytics for Variant C (31 columns)</li>
+                    <li>variant_d_data.csv - Field-level analytics for Variant D (31 columns)</li>
+                    <li>nasa_tlx_data.csv - All NASA-TLX workload scores</li>
+                </ul>
+            </div>
+
+            <div id="dataPreview" class="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-bold mb-3">Data Summary:</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-3 bg-white rounded shadow-sm">
+                        <p class="text-sm text-gray-600">Variant A Submissions</p>
+                        <p class="text-2xl font-bold text-indigo-600" id="countVariantA">0</p>
+                    </div>
+                    <div class="p-3 bg-white rounded shadow-sm">
+                        <p class="text-sm text-gray-600">Variant B Submissions</p>
+                        <p class="text-2xl font-bold text-indigo-600" id="countVariantB">0</p>
+                    </div>
+                    <div class="p-3 bg-white rounded shadow-sm">
+                        <p class="text-sm text-gray-600">Variant C Submissions</p>
+                        <p class="text-2xl font-bold text-indigo-600" id="countVariantC">0</p>
+                    </div>
+                    <div class="p-3 bg-white rounded shadow-sm">
+                        <p class="text-sm text-gray-600">Variant D Submissions</p>
+                        <p class="text-2xl font-bold text-indigo-600" id="countVariantD">0</p>
+                    </div>
+                    <div class="p-3 bg-white rounded shadow-sm col-span-2">
+                        <p class="text-sm text-gray-600">NASA-TLX Responses</p>
+                        <p class="text-2xl font-bold text-green-600" id="countNASA">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <button id="exportBtn" onclick="exportAllData()"
+                    class="w-full bg-green-600 text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-green-700 transition shadow-lg">
+                📥 Download Data as ZIP
+            </button>
+
+            <div id="progressContainer" class="hidden mt-6">
+                <div class="bg-gray-200 rounded-full h-4 overflow-hidden">
+                    <div id="progressBar" class="bg-green-600 h-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="progressText" class="text-center mt-2 text-sm text-gray-600">Preparing download...</p>
+            </div>
+        </div>
+
+        <!-- Download Complete Section -->
+        <div id="successSection" class="hidden bg-white rounded-xl shadow-2xl p-8">
+            <div class="bg-gradient-to-br from-green-100 to-emerald-100 border-2 border-green-600 rounded-xl p-12 text-center">
+                <svg class="w-24 h-24 mx-auto text-green-600 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h2 class="text-4xl font-bold text-green-900 mb-4">✅ Download Complete!</h2>
+                <p class="text-xl text-green-800 mb-8">Your data has been successfully exported.</p>
+                
+                <div class="bg-white rounded-xl p-6 mb-8 shadow-lg">
+                    <p class="text-gray-700 mb-4">
+                        <strong class="text-2xl">📁 File Downloaded:</strong>
+                    </p>
+                    <p class="font-mono text-lg text-green-700 mb-6" id="downloadedFileName"></p>
+                    <div class="text-left text-gray-700 space-y-2">
+                        <p>✅ All form completion data exported</p>
+                        <p>✅ All NASA-TLX responses exported</p>
+                        <p>✅ Data ready for analysis</p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-lg mb-8 text-left">
+                    <p class="font-bold text-gray-900 mb-2">📋 Next Steps:</p>
+                    <ol class="list-decimal ml-6 text-gray-700 space-y-1">
+                        <li>Check your Downloads folder for the ZIP file</li>
+                        <li>Extract the ZIP file to access the CSV files</li>
+                        <li>Import the CSV files into your analysis software (e.g., SPSS)</li>
+                        <li>You can now close this window</li>
+                    </ol>
+                </div>
+
+                <button onclick="clearDataAndClose()" 
+                        class="bg-red-600 text-white px-12 py-4 rounded-xl font-bold text-lg hover:bg-red-700 transition shadow-lg mb-4">
+                    🗑️ Clear All Data & Close Window
+                </button>
+
+                <p class="text-sm text-gray-600 mt-4">
+                    ⚠️ This will permanently delete all participant data from this browser
+                </p>
+                
+                <p class="text-sm text-gray-600 mt-2">
+                    🙏 Thank you for participating in this research study!
+                </p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ============================================
+        // DATA SUMMARY
+        // ============================================
+        function updateDataSummary() {
+            const logsA = JSON.parse(localStorage.getItem('logs_A') || '{}');
+            const logsB = JSON.parse(localStorage.getItem('logs_B') || '{}');
+            const logsC = JSON.parse(localStorage.getItem('logs_C') || '{}');
+            const logsD = JSON.parse(localStorage.getItem('logs_D') || '{}');
+            
+            const nasaA = JSON.parse(localStorage.getItem('nasa_tlx_A') || '{}');
+            const nasaB = JSON.parse(localStorage.getItem('nasa_tlx_B') || '{}');
+            const nasaC = JSON.parse(localStorage.getItem('nasa_tlx_C') || '{}');
+            const nasaD = JSON.parse(localStorage.getItem('nasa_tlx_D') || '{}');
+            const totalNASA = Object.keys(nasaA).length + Object.keys(nasaB).length + Object.keys(nasaC).length + Object.keys(nasaD).length;
+
+            document.getElementById('countVariantA').textContent = Object.keys(logsA).length;
+            document.getElementById('countVariantB').textContent = Object.keys(logsB).length;
+            document.getElementById('countVariantC').textContent = Object.keys(logsC).length;
+            document.getElementById('countVariantD').textContent = Object.keys(logsD).length;
+            document.getElementById('countNASA').textContent = totalNASA;
+        }
+
+        function getParticipantId() {
+            const studyData = JSON.parse(localStorage.getItem('formStudyData') || '{}');
+            return studyData.participantId || 'Unknown';
+        }
+
+        // ============================================
+        // CSV EXPORT FUNCTIONS
+        // ============================================
+        function jsonToCSV(data, headers) {
+            if (!data || data.length === 0) return '';
+            
+            const csv = [];
+            csv.push(headers.join(','));
+            
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    let value = row[header];
+                    if (value === null || value === undefined) value = '';
+                    if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+                        value = '"' + value.replace(/"/g, '""') + '"';
+                    }
+                    return value;
+                });
+                csv.push(values.join(','));
+            });
+            
+            return csv.join('\n');
+        }
+
+        // ============================================
+        // ENHANCED FIELD-LEVEL ANALYTICS
+        // ============================================
+        function exportDetailedVariantData(variantLetter) {
+            const logs = JSON.parse(localStorage.getItem(`logs_${variantLetter}`) || '{}');
+            const data = [];
+            
+            Object.entries(logs).forEach(([participantId, logData]) => {
+                const detailedLogs = logData.detailedLogs || [];
+                const fieldMetrics = calculateFieldMetrics(detailedLogs);
+                
+                data.push({
+                    participant_id: participantId,
+                    variant: variantLetter,
+                    timestamp: logData.timestamp,
+                    completion_time: logData.completionTime,
+                    total_errors: logData.totalErrors,
+                    validation_errors: logData.errorCategories?.validation || logData.errorCategories?.invalid_format || 0,
+                    navigation_block_errors: logData.errorCategories?.navigation_block || 0,
+                    incomplete_field_count: fieldMetrics.incompleteCount,
+                    total_field_interactions: logData.totalEvents || 0,
+                    first_interaction_timestamp: logData.firstInteraction,
+                    form_submit_timestamp: logData.formSubmitTime,
+                    ...fieldMetrics.fieldTimes
+                });
+            });
+            
+            // Updated headers - Final CSV structure (31 columns)
+            const headers = [
+                'participant_id',
+                'variant',
+                'timestamp',
+                'completion_time',
+                'total_errors',
+                'validation_errors',
+                'navigation_block_errors',
+                'incomplete_field_count',
+                'total_field_interactions',
+                'first_interaction_timestamp',
+                'form_submit_timestamp',
+                'fullName_time_spent',
+                'dateOfBirth_time_spent',
+                'email_time_spent',
+                'phone_time_spent',
+                'streetAddress_time_spent',
+                'city_time_spent',
+                'postcode_time_spent',
+                'country_time_spent',
+                'employmentStatus_time_spent',
+                'employer_time_spent',
+                'jobTitle_time_spent',
+                'yearsExperience_time_spent',
+                'qualification_time_spent',
+                'institution_time_spent',
+                'fieldOfStudy_time_spent',
+                'yearCompletion_time_spent',
+                'desiredPosition_time_spent',
+                'startDate_time_spent',
+                'salaryExpectations_time_spent',
+                'coverLetter_time_spent'
+            ];
+            
+            return jsonToCSV(data, headers);
+        }
+
+        function calculateFieldMetrics(detailedLogs) {
+            const fieldData = {};
+            const requiredFields = [
+                'fullName', 'dateOfBirth', 'email', 'phone', 'streetAddress', 'city', 
+                'postcode', 'country', 'employmentStatus', 'qualification', 'institution', 
+                'fieldOfStudy', 'yearCompletion', 'desiredPosition', 'startDate', 
+                'salaryExpectations', 'coverLetter'
+            ];
+            
+            const allFields = [
+                'fullName', 'dateOfBirth', 'email', 'phone', 'streetAddress', 'city', 
+                'postcode', 'country', 'employmentStatus', 'employer', 'jobTitle', 
+                'yearsExperience', 'qualification', 'institution', 'fieldOfStudy',
+                'yearCompletion', 'desiredPosition', 'startDate', 'salaryExpectations', 
+                'coverLetter'
+            ];
+            
+            allFields.forEach(field => {
+                fieldData[field] = {
+                    timeSpent: 0,
+                    completed: false,
+                    focusTime: null
+                };
+            });
+            
+            detailedLogs.forEach(log => {
+                const fieldName = log.fieldName;
+                if (!fieldName) return;
+                
+                // Map dob fields to dateOfBirth
+                let targetField = fieldName;
+                if (fieldName === 'dobYear' || fieldName === 'dobMonth' || fieldName === 'dobDay') {
+                    targetField = 'dateOfBirth';
+                }
+                
+                if (!fieldData[targetField]) return;
+                
+                if (log.event === 'fieldFocus') {
+                    fieldData[targetField].focusTime = log.timestamp;
+                }
+                
+                if (log.event === 'fieldInput') {
+                    if (log.characterCount > 0 || log.value) {
+                        fieldData[targetField].completed = true;
+                    }
+                }
+                
+                if (log.event === 'fieldBlur') {
+                    if (fieldData[targetField].focusTime) {
+                        const timeSpent = (log.timestamp - fieldData[targetField].focusTime) / 1000;
+                        fieldData[targetField].timeSpent += timeSpent;
+                    }
+                    if (log.characterCount > 0 || log.value) {
+                        fieldData[targetField].completed = true;
+                    }
+                }
+            });
+            
+            // Count incomplete REQUIRED fields only
+            let incompleteCount = 0;
+            requiredFields.forEach(field => {
+                if (!fieldData[field].completed) {
+                    incompleteCount++;
+                }
+            });
+            
+            // Build field times object (only time_spent columns)
+            const fieldTimes = {};
+            allFields.forEach(field => {
+                fieldTimes[`${field}_time_spent`] = fieldData[field].timeSpent.toFixed(2);
+            });
+            
+            return {
+                incompleteCount: incompleteCount,
+                fieldTimes: fieldTimes
+            };
+        }
+
+        function exportNASATLXData() {
+            const data = [];
+            ['A', 'B', 'C', 'D'].forEach(variant => {
+                const nasaData = JSON.parse(localStorage.getItem(`nasa_tlx_${variant}`) || '{}');
+                
+                Object.entries(nasaData).forEach(([participantId, scores]) => {
+                    data.push({
+                        participant_id: participantId,
+                        variant: variant,
+                        timestamp: scores.timestamp || new Date().toISOString(),
+                        mental_demand: scores.mentalDemand || 0,
+                        physical_demand: scores.physicalDemand || 0,
+                        temporal_demand: scores.temporalDemand || 0,
+                        performance: scores.performance || 0,
+                        effort: scores.effort || 0,
+                        frustration: scores.frustration || 0,
+                        overall_workload: scores.overallWorkload || 0
+                    });
+                });
+            });
+            
+            const headers = [
+                'participant_id', 'variant', 'timestamp', 'mental_demand', 
+                'physical_demand', 'temporal_demand', 'performance', 
+                'effort', 'frustration', 'overall_workload'
+            ];
+            
+            return jsonToCSV(data, headers);
+        }
+
+        // ============================================
+        // MAIN EXPORT FUNCTION
+        // ============================================
+        async function exportAllData() {
+            const exportBtn = document.getElementById('exportBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            exportBtn.disabled = true;
+            exportBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            progressContainer.classList.remove('hidden');
+            
+            try {
+                const zip = new JSZip();
+                
+                function updateProgress(percent, message) {
+                    progressBar.style.width = percent + '%';
+                    progressText.textContent = message;
+                }
+                
+                updateProgress(10, 'Exporting Variant A data...');
+                const variantACSV = exportDetailedVariantData('A');
+                if (variantACSV) zip.file('variant_a_data.csv', variantACSV);
+                
+                updateProgress(30, 'Exporting Variant B data...');
+                const variantBCSV = exportDetailedVariantData('B');
+                if (variantBCSV) zip.file('variant_b_data.csv', variantBCSV);
+                
+                updateProgress(50, 'Exporting Variant C data...');
+                const variantCCSV = exportDetailedVariantData('C');
+                if (variantCCSV) zip.file('variant_c_data.csv', variantCCSV);
+                
+                updateProgress(70, 'Exporting Variant D data...');
+                const variantDCSV = exportDetailedVariantData('D');
+                if (variantDCSV) zip.file('variant_d_data.csv', variantDCSV);
+                
+                updateProgress(90, 'Exporting NASA-TLX data...');
+                const nasaCSV = exportNASATLXData();
+                if (nasaCSV) zip.file('nasa_tlx_data.csv', nasaCSV);
+                
+                updateProgress(95, 'Creating documentation...');
+                const readme = `Form Study Data Export
+======================
+
+Export Date: ${new Date().toISOString()}
+Participant ID: ${getParticipantId()}
+
+CSV Format (Updated - 31 Columns):
+----------------------------------
+Each variant CSV includes streamlined field-level analytics:
+
+Core Metrics:
+- participant_id, variant, timestamp
+- completion_time (seconds)
+- total_errors, validation_errors, navigation_block_errors
+- incomplete_field_count
+- total_field_interactions
+- first_interaction_timestamp, form_submit_timestamp
+
+Field Timing (20 fields):
+- fullName_time_spent through coverLetter_time_spent
+- Time spent on each field in seconds
+
+Files:
+------
+1. variant_a_data.csv - Variant A (Control) with 31 columns
+2. variant_b_data.csv - Variant B (Chunking) with 31 columns  
+3. variant_c_data.csv - Variant C (Progressive) with 31 columns
+4. variant_d_data.csv - Variant D (Both) with 31 columns
+5. nasa_tlx_data.csv - NASA-TLX workload scores
+
+Error Categories:
+-----------------
+- validation_errors: Format/pattern violations (email, phone, postcode)
+- navigation_block_errors: Blocked navigation attempts (Variants C & D only)
+- incomplete_field_count: Number of empty fields at submission
+
+Note: All participants used standardized reference card data.
+Character counts are constant and excluded from CSV.
+Interviews were conducted separately and audio recorded using mobile phone.
+
+For questions, contact the researcher.
+`;
+                zip.file('README.txt', readme);
+                
+                updateProgress(98, 'Generating ZIP file...');
+                const blob = await zip.generateAsync({ type: 'blob' });
+                
+                updateProgress(100, 'Download ready!');
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const fileName = `form_study_data_${getParticipantId()}_${new Date().toISOString().split('T')[0]}.zip`;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Mark export as complete in localStorage
+                const participantId = getParticipantId();
+                localStorage.setItem('study_exported', participantId);
+                
+                // Update formStudyData status
+                const studyData = JSON.parse(localStorage.getItem('formStudyData') || '{}');
+                studyData.status = studyData.status || {};
+                studyData.status.export = { status: 'complete' };
+                localStorage.setItem('formStudyData', JSON.stringify(studyData));
+                
+                // Show success section after download
+                setTimeout(() => {
+                    document.getElementById('mainSection').classList.add('hidden');
+                    document.getElementById('successSection').classList.remove('hidden');
+                    document.getElementById('downloadedFileName').textContent = fileName;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                progressText.textContent = '❌ Export failed: ' + error.message;
+                progressBar.classList.remove('bg-green-600');
+                progressBar.classList.add('bg-red-600');
+                exportBtn.disabled = false;
+                exportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // ============================================
+        // CLEAR DATA AND CLOSE
+        // ============================================
+        function clearDataAndClose() {
+            if (confirm('⚠️ This will permanently delete ALL participant data from this browser.\n\nAre you sure you want to clear all data and close?')) {
+                // Clear all study data
+                localStorage.removeItem('formStudyData');
+                localStorage.removeItem('logs_A');
+                localStorage.removeItem('logs_B');
+                localStorage.removeItem('logs_C');
+                localStorage.removeItem('logs_D');
+                localStorage.removeItem('nasa_tlx_A');
+                localStorage.removeItem('nasa_tlx_B');
+                localStorage.removeItem('nasa_tlx_C');
+                localStorage.removeItem('nasa_tlx_D');
+                localStorage.removeItem('study_exported');
+                
+                // Show confirmation
+                alert('✅ All data has been cleared!\n\nYou can now close this window or tab.');
+                
+                // Try to close the window (may not work in all browsers)
+                window.close();
+                
+                // If window.close() doesn't work, redirect to a blank page
+                setTimeout(() => {
+                    window.location.href = 'about:blank';
+                }, 500);
+            }
+        }
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        document.addEventListener('DOMContentLoaded', updateDataSummary);
+    </script>
+</body>
+</html>
